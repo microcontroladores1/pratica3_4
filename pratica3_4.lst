@@ -1,0 +1,243 @@
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 1
+
+
+
+
+
+       MCS-51 Family Macro Assembler   A S E M - 5 1   V 1.3
+       =====================================================
+
+
+
+	Source File:	pratica3_4.asm
+	Object File:	pratica3_4.hex
+	List File:	pratica3_4.lst
+
+
+
+ Line  I  Addr  Code            Source
+
+    1:				; Praticas 3 e 4: Contador de segundos e de pulsos
+    2:				; Programador: Francisco Edno
+    3:				;
+    4:				; A partir de uma chave alavanca o contexto de execucao do microcontrolador
+    5:				; e selecionado. No contexto 0, e realizada a contagem de segundos. No contexto
+    6:				; 1 uma contagem de pulsos. Para cada contexto e utilizado um banco de
+    7:				; registradores diferentes, de modo que o estado do contexto anterior
+    8:				; seja salvo na memoria. A ideia de mudanca de contexto foi obtida a partir
+    9:				; do livro do Scott Mackenzie. O objetivo desse projeto e puramente
+   10:				; educacional.
+   11:
+   12:				; Push button: p2.0, Shift Register: p2.1, p2.2 e p2.3, chave de contexto: p2.4
+   13:				;
+   14:				; ----------------------------------------------------------
+   15:				; Mapa de registradores
+   16:				; ----------------------------------------------------------
+   17:				; R0: Contagem binaria
+   18:				; R1: Parte decimal
+   19:				; R2: Unidade
+   20:				;
+   21:				; Banco 0: Contador de segundos
+   22:				; Banco 1: Contador de pulsos
+   23:				; ----------------------------------------------------------
+   24:
+   25:
+   26:				; **********************************************************
+   27:				; Equates
+   28:				; **********************************************************
+   29:
+   30:		B      00A0	BUTN		equ		p2.0
+
+   31:
+   32:		B      00A1	SHD			equ		p2.1				; Fluxo de dados no registra
+				dor
+   33:		B      00A2	SHCK		equ		p2.2				; Clock do registrador
+   34:		B      00A3	SHLTCH		equ		p2.3				; Latch do registrador
+   35:
+   36:		B      00A4	CONTSW		equ		p2.4				; Chave seletora de contexto
+   37:
+   38:				; **********************************************************
+   39:				; Configuracoes iniciais
+   40:				; **********************************************************
+   41:
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
+
+
+
+ Line  I  Addr  Code            Source
+
+   42:				; O 8052 divide os enderecos do SFRs com 128 bytes extras de memoria ram.
+   43:				; Essa memoria extra so pode ser acessada por enderecamento indireto,
+   44:				; por isso a pilha pode ser inicializada nessa regiao
+   45:
+   46:	  0000	75 81 7F				mov			sp, #7fh					; In
+				icializa a pilha na regiao de memoria extra do 8052
+   47:
+   48:				; Inicializa os registradores r0, r1 e r2 dos bancos 0 e 1 com #0
+   49:
+   50:							; Banco 0
+   51:	  0003	75 00 00				mov		00h, #0
+   52:	  0006	75 01 00				mov		01h, #0
+   53:	  0009	75 02 00				mov		02h, #0
+   54:
+   55:							; Banco 1
+   56:	  000C	75 08 00				mov		08h, #0
+   57:	  000F	75 09 00				mov		09h, #0
+   58:	  0012	75 10 00				mov		10h, #0
+   59:
+   60:				; **********************************************************
+   61:				; Main
+   62:				; **********************************************************
+   63:
+   64:	  0015			Main:
+   65:	  0015	20 A4 05				jb		CONTSW, Sec
+   66:	  0018	11 21		Pulse:		acall	PulseCT
+   67:	  001A	02 00 1F				jmp		Exit
+   68:	  001D	11 22		Sec:		acall	SecCT
+   69:
+   70:	  001F	01 15		Exit:		ajmp	Main
+   71:
+   72:				; **********************************************************
+   73:				; Sub-Rotinas
+   74:				; **********************************************************
+   75:
+   76:				; ----------------------------------------------------------
+   77:				; PulseCT
+   78:				; ----------------------------------------------------------
+   79:				; Contexto de contagem de pulsos
+   80:				; ----------------------------------------------------------
+   81:	  0021			PulseCT:
+   82:	  0021	22					ret
+   83:
+   84:				; ----------------------------------------------------------
+   85:				; SecCT
+   86:				; ----------------------------------------------------------
+   87:				; Contexto de contagem de segundos
+   88:				; ----------------------------------------------------------
+   89:	  0022			SecCT:
+   90:	  0022	22					ret
+   91:
+   92:
+   93:				; **********************************************************
+   94:							end
+   95:				; **********************************************************
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
+
+
+
+
+
+
+
+                     register banks used:  ---
+
+                     no errors
+
+
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
+
+
+
+
+
+	       L I S T   O F   S Y M B O L S
+	       =============================
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+??ASEM_51			  NUMBER    8051
+??VERSION			  NUMBER    0130
+AC				  BIT	      D6
+ACC				  DATA	      E0
+B				  DATA	      F0
+BUTN				  NUMBER    00A0	  30
+CONTSW				  NUMBER    00A4	  36
+CY				  BIT	      D7
+DPH				  DATA	      83
+DPL				  DATA	      82
+EA				  BIT	      AF
+ES				  BIT	      AC
+ET0				  BIT	      A9
+ET1				  BIT	      AB
+EX0				  BIT	      A8
+EX1				  BIT	      AA
+EXIT				  CODE	    001F	  70
+EXTI0				  CODE	    0003
+EXTI1				  CODE	    0013
+F0				  BIT	      D5
+IE				  DATA	      A8
+IE0				  BIT	      89
+IE1				  BIT	      8B
+INT0				  BIT	      B2
+INT1				  BIT	      B3
+IP				  DATA	      B8
+IT0				  BIT	      88
+IT1				  BIT	      8A
+MAIN				  CODE	    0015	  64
+OV				  BIT	      D2
+P				  BIT	      D0
+P0				  DATA	      80
+P1				  DATA	      90
+P2				  DATA	      A0
+P3				  DATA	      B0
+PCON				  DATA	      87
+PS				  BIT	      BC
+PSW				  DATA	      D0
+PT0				  BIT	      B9
+PT1				  BIT	      BB
+PULSE				  CODE	    0018	  66
+PULSECT				  CODE	    0021	  81
+PX0				  BIT	      B8
+PX1				  BIT	      BA
+RB8				  BIT	      9A
+RD				  BIT	      B7
+REN				  BIT	      9C
+RESET				  CODE	    0000
+RI				  BIT	      98
+RS0				  BIT	      D3
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 5
+
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+RS1				  BIT	      D4
+RXD				  BIT	      B0
+SBUF				  DATA	      99
+SCON				  DATA	      98
+SEC				  CODE	    001D	  68
+SECCT				  CODE	    0022	  89
+SHCK				  NUMBER    00A2	  33
+SHD				  NUMBER    00A1	  32
+SHLTCH				  NUMBER    00A3	  34
+SINT				  CODE	    0023
+SM0				  BIT	      9F
+SM1				  BIT	      9E
+SM2				  BIT	      9D
+SP				  DATA	      81
+T0				  BIT	      B4
+T1				  BIT	      B5
+TB8				  BIT	      9B
+TCON				  DATA	      88
+TF0				  BIT	      8D
+TF1				  BIT	      8F
+TH0				  DATA	      8C
+TH1				  DATA	      8D
+TI				  BIT	      99
+TIMER0				  CODE	    000B
+TIMER1				  CODE	    001B
+TL0				  DATA	      8A
+TL1				  DATA	      8B
+TMOD				  DATA	      89
+TR0				  BIT	      8C
+TR1				  BIT	      8E
+TXD				  BIT	      B1
+WR				  BIT	      B6
