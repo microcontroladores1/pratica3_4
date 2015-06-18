@@ -1,0 +1,95 @@
+,,,; Praticas 3 e 4: Contador de segundos e de pulsos
+,,,; Programador: Francisco Edno
+,,,;
+,,,; A partir de uma chave alavanca o contexto de execucao do microcontrolador
+,,,; e selecionado. No contexto 0, e realizada a contagem de segundos. No contexto
+,,,; 1 uma contagem de pulsos. Para cada contexto e utilizado um banco de
+,,,; registradores diferentes, de modo que o estado do contexto anterior
+,,,; seja salvo na memoria. A ideia de mudanca de contexto foi obtida a partir
+,,,; do livro do Scott Mackenzie. O objetivo desse projeto e puramente
+,,,; educacional.
+,,,
+,,,; Push button: p2.0, Shift Register: p2.1, p2.2 e p2.3, chave de contexto: p2.4
+,,,;
+,,,; ----------------------------------------------------------
+,,,; Mapa de registradores
+,,,; ----------------------------------------------------------
+,,,; R0: Contagem binaria
+,,,; R1: Parte decimal
+,,,; R2: Unidade
+,,,;
+,,,; Banco 0: Contador de segundos
+,,,; Banco 1: Contador de pulsos
+,,,; ----------------------------------------------------------
+,,,
+,,,
+,,,; **********************************************************
+,,,; Equates
+,,,; **********************************************************
+,,,
+000B,,,BUTN            equ             p2.0
+,,,
+000B,,,SHD                     equ             p2.1                            ; Fluxo de dados no registra
+000B,,,SHCK            equ             p2.2                            ; Clock do registrador
+000B,,,SHLTCH          equ             p2.3                            ; Latch do registrador
+,,,
+000B,,,CONTSW          equ             p2.4                            ; Chave seletora de contexto
+,,,
+,,,; **********************************************************
+,,,; Configuracoes iniciais
+,,,; **********************************************************
+,,,
+,,,; O 8052 divide os enderecos do SFRs com 128 bytes extras de memoria ram.
+,,,; Essa memoria extra so pode ser acessada por enderecamento indireto,
+,,,; por isso a pilha pode ser inicializada nessa regiao
+,,,
+0000,75 81 7F,,                        mov                     sp, #7fh                                        ; In
+,,,
+,,,; Inicializa os registradores r0, r1 e r2 dos bancos 0 e 1 com #0
+,,,
+,,,                        ; Banco 0
+0003,75 00 00,,                        mov             00h, #0
+0006,75 01 00,,                        mov             01h, #0
+0009,75 02 00,,                        mov             02h, #0
+,,,
+,,,                        ; Banco 1
+000C,75 08 00,,                        mov             08h, #0
+000F,75 09 00,,                        mov             09h, #0
+0012,75 10 00,,                        mov             10h, #0
+,,,
+,,,; **********************************************************
+,,,; Main
+,,,; **********************************************************
+,,,
+0015,,Main,Main:
+0015,20 A4 05,,                        jb              CONTSW, Sec
+0018,11 21,Pulse,Pulse:          acall   PulseCT
+001A,02 00 1F,,                        jmp             Exit
+001D,11 22,Sec,Sec:            acall   SecCT
+,,,
+001F,01 15,Exit,Exit:           ajmp    Main
+,,,
+,,,; **********************************************************
+,,,; Sub-Rotinas
+,,,; **********************************************************
+,,,
+,,,; ----------------------------------------------------------
+,,,; PulseCT
+,,,; ----------------------------------------------------------
+,,,; Contexto de contagem de pulsos
+,,,; ----------------------------------------------------------
+0021,,PulseCT,PulseCT:
+0021,22,,                        ret
+,,,
+,,,; ----------------------------------------------------------
+,,,; SecCT
+,,,; ----------------------------------------------------------
+,,,; Contexto de contagem de segundos
+,,,; ----------------------------------------------------------
+0022,,SecCT,SecCT:
+0022,22,,                        ret
+,,,
+,,,
+,,,; **********************************************************
+000E,,,                        end
+,,,; **********************************************************
