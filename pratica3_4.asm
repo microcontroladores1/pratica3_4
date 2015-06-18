@@ -27,7 +27,7 @@
 ; Equates
 ; **********************************************************
 
-BUTN		equ		p2.0												
+BTN		equ		p2.0												
 
 SHD			equ		p2.1				; Fluxo de dados no registrador	
 SHCK		equ		p2.2				; Clock do registrador
@@ -61,11 +61,27 @@ CONTSW		equ		p2.4				; Chave seletora de contexto
 ; Main
 ; ********************************************************** 
 
+			acall		DcdCount
+			acall		Display
 Main:
 			jb		CONTSW, Sec		
-Pulse:		acall	PulseCT
-			jmp		Exit
-Sec:		acall	SecCT
+Pulse:		
+			setb	rs0
+			clr		rs1
+
+			acall	DcdCount
+			acall	Display
+
+			acall	PulseCT
+			ajmp		Exit
+Sec:		
+			clr		rs0
+			clr		rs1
+
+			acall	DcdCount
+			acall	Display
+
+			acall	SecCT
 
 Exit:		ajmp	Main
 
@@ -79,17 +95,19 @@ Exit:		ajmp	Main
 ; Contexto de contagem de pulsos
 ; ----------------------------------------------------------
 PulseCT:
-			setb	rs0					; Seleciona o registrador 1
-			clr		rs1
+			jnb		BTN, $				; Verifico se o botao foi apertado
+			jb		BTN, $				; Verifico se o botao foi liberado para contar um pulso
 
-			; Verifica se o b eh igual a 0
-			; Verifica se passou para 1
-			; Verifica se r0 = 99
-			acall	DcdCount
+			mov		a, not 98			; Limite da contagem de pulsos
+			add		a, r0				; se r0 conter um numero > 98, a carry vai ser setada
+
+			jnc		Inrement			; Se !(r>98), incremente. Else, pule
+			ajmp	Decode
+Inrement:	inc		r0
+Decode:		
+			acall	DcdCount 
 			acall	Display
 			
-			clr		rs0					; Volta para o registrador 0
-			clr		rs1
 
 			ret
 
@@ -99,10 +117,11 @@ PulseCT:
 ; Contexto de contagem de segundos
 ; ----------------------------------------------------------
 SecCT:		
+			acall	DcdCount
 			acall	Display
 			; Fazer a verificacao se r0 = 59
-			acall	DcdCount
 			acall	Delay
+			inc		r0
 
 			ret
 
@@ -110,8 +129,37 @@ SecCT:
 ; Display
 ; ----------------------------------------------------------
 ; Imprime os valores dos registradores r1 e r2 nos displays
+; Basicamente, envio bit a bit do acumulador pelo SHD. A cada
+; envio dou um pulso de clock.
 ; ----------------------------------------------------------
 Display:
+			clr		SHLTCH					; Desabilito a saida do shift
+
+			mov		a, r2					; Envio primeiro a unidade
+			acall	SHSend
+
+			mov		a, r1					; Envio depois a dezena
+			acall	SHSend
+
+			setb	SHLTCH					; travo a saida do shift
+
+			ret
+
+; ----------------------------------------------------------
+; SHSend
+; ----------------------------------------------------------
+; Envio serial do acumulador para shift register
+; ----------------------------------------------------------
+SHSend:
+			mov		r3, #8					; Contador
+Again:		mov		c, acc.7
+			mov		SHD, c					; envia a carry para o shift
+
+			acall	CKPulse					; Pulso de clock
+
+			rl		a
+			djnz	r3, Again
+
 			ret
 
 ; ----------------------------------------------------------
@@ -121,7 +169,32 @@ Display:
 ; decimal e a unidade nos registradores r1 e r2
 ; ----------------------------------------------------------
 DcdCount:
+			mov		a, r0
+			mov		b, #10
+
+			div		ab
+
+			acall	LKDisp					; Decodifca binario para o display e bota no acumulador
+			mov		r1, a					; joga a dezena no r1
+
+			mov		a, b
+			acall	LKDisp					; Decodifca binario para o display e bota no acumulador
+			mov		r2, a					; joga a unidade no r2
+
 			ret
+
+; ----------------------------------------------------------
+; LKDisp
+; ----------------------------------------------------------
+; Look-up table para decodificacao binario -> display
+; ----------------------------------------------------------
+LKDisp:
+			mov		dptr, #DECODING
+			movc	a, @a+dptr 
+
+			ret
+
+DECODING:	db	not 81h, not 0cfh, not 92h, not 86h, not 0cch, not 0a4h, not 0a0h, not 8fh, not 80h, not 8ch
 
 ; ----------------------------------------------------------
 ; Delay
@@ -130,6 +203,23 @@ DcdCount:
 ; Feche em aproximadamente 1 segundo
 ; ----------------------------------------------------------
 Delay:
+			mov		r4, #255
+			mov		r6, #255
+Here:		mov		r5, #255
+			djnz	r5, $
+			djnz	r6, $
+			djnz	r4, Here
+			ret
+
+; ----------------------------------------------------------
+; CKPulse
+; ----------------------------------------------------------
+; Pulso de clock no registardor de deslocamento
+; ----------------------------------------------------------
+CKPulse:
+			setb	SHCK
+			clr		SHCK
+
 			ret
 
 ; ********************************************************** 

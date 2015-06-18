@@ -27,7 +27,7 @@
 ,,,; Equates
 ,,,; **********************************************************
 ,,,
-000B,,,BUTN            equ             p2.0
+000B,,,BTN             equ             p2.0
 ,,,
 000B,,,SHD                     equ             p2.1                            ; Fluxo de dados no registra
 000B,,,SHCK            equ             p2.2                            ; Clock do registrador
@@ -61,13 +61,29 @@
 ,,,; Main
 ,,,; **********************************************************
 ,,,
-0015,,Main,Main:
-0015,20 A4 05,,                        jb              CONTSW, Sec
-0018,11 21,Pulse,Pulse:          acall   PulseCT
-001A,02 00 1F,,                        jmp             Exit
-001D,11 22,Sec,Sec:            acall   SecCT
+0015,11 66,,                        acall           DcdCount
+0017,11 4F,,                        acall           Display
+0019,,Main,Main:
+0019,20 A4 0D,,                        jb              CONTSW, Sec
+001C,,Pulse,Pulse:
+001C,D2 D3,,                        setb    rs0
+001E,C2 D4,,                        clr             rs1
 ,,,
-001F,01 15,Exit,Exit:           ajmp    Main
+0020,11 66,,                        acall   DcdCount
+0022,11 4F,,                        acall   Display
+,,,
+0024,11 35,,                        acall   PulseCT
+0026,02 00 33,,                        jmp             Exit
+0029,,Sec,Sec:
+0029,C2 D3,,                        clr             rs0
+002B,C2 D4,,                        clr             rs1
+,,,
+002D,11 66,,                        acall   DcdCount
+002F,11 4F,,                        acall   Display
+,,,
+0031,11 48,,                        acall   SecCT
+,,,
+0033,01 19,Exit,Exit:           ajmp    Main
 ,,,
 ,,,; **********************************************************
 ,,,; Sub-Rotinas
@@ -78,17 +94,126 @@
 ,,,; ----------------------------------------------------------
 ,,,; Contexto de contagem de pulsos
 ,,,; ----------------------------------------------------------
-0021,,PulseCT,PulseCT:
-0021,22,,                        ret
+0035,,PulseCT,PulseCT:
+0035,30 A0 FD,,                        jnb             BTN, $                          ; Verifico se o botao foi ap
+0038,20 A0 FD,,                        jb              BTN, $                          ; Verifico se o botao foi li
+,,,
+003B,E5 9D,,                        mov             a, not 98                       ; Limite da contagem de puls
+003D,28,,                        add             a, r0                           ; se r0 conter um numero > 9
+,,,
+003E,50 02,,                        jnc             Inrement                        ; Se !(r>98), incremente. El
+0040,01 43,,                        ajmp    Decode
+0042,08,Inrement,Inrement:       inc             r0
+0043,,Decode,Decode:
+0043,11 66,,                        acall   DcdCount
+0045,11 4F,,                        acall   Display
+,,,
+,,,
+0047,22,,                        ret
 ,,,
 ,,,; ----------------------------------------------------------
 ,,,; SecCT
 ,,,; ----------------------------------------------------------
 ,,,; Contexto de contagem de segundos
 ,,,; ----------------------------------------------------------
-0022,,SecCT,SecCT:
-0022,22,,                        ret
+0048,,SecCT,SecCT:
+0048,11 66,,                        acall   DcdCount
+004A,11 4F,,                        acall   Display
+,,,                        ; Fazer a verificacao se r0 = 59
+004C,11 83,,                        acall   Delay
 ,,,
+004E,22,,                        ret
+,,,
+,,,; ----------------------------------------------------------
+,,,; Display
+,,,; ----------------------------------------------------------
+,,,; Imprime os valores dos registradores r1 e r2 nos displays
+,,,; Basicamente, envio bit a bit do acumulador pelo SHD. A cada
+,,,; envio dou um pulso de clock.
+,,,; ----------------------------------------------------------
+004F,,Display,Display:
+004F,C2 A3,,                        clr             SHLTCH                                  ; Desabilito a saida
+,,,
+0051,EA,,                        mov             a, r2                                   ; Envio primeiro a u
+0052,11 5A,,                        acall   SHSend
+,,,
+0054,E9,,                        mov             a, r1                                   ; Envio depois a dez
+0055,11 5A,,                        acall   SHSend
+,,,
+0057,D2 A3,,                        setb    SHLTCH                                  ; travo a saida do shift
+,,,
+0059,22,,                        ret
+,,,
+,,,; ----------------------------------------------------------
+,,,; SHSend
+,,,; ----------------------------------------------------------
+,,,; Envio serial do acumulador para shift register
+,,,; ----------------------------------------------------------
+005A,,SHSend,SHSend:
+005A,7B 08,,                        mov             r3, #8                                  ; Contador
+005C,A2 E7,Again,Again:          mov             c, acc.7
+005E,92 A1,,                        mov             SHD, c                                  ; envia a carry para
+,,,
+0060,11 84,,                        acall   CKPulse                                 ; Pulso de clock
+,,,
+0062,23,,                        rl              a
+0063,DB F7,,                        djnz    r3, Again
+,,,
+0065,22,,                        ret
+,,,
+,,,; ----------------------------------------------------------
+,,,; DcdCount
+,,,; ----------------------------------------------------------
+,,,; Decodifica o valor do registrador r0 em BCD e joga os
+,,,; decimal e a unidade nos registradores r1 e r2
+,,,; ----------------------------------------------------------
+0066,,DcdCount,DcdCount:
+0066,E8,,                        mov             a, r0
+0067,75 F0 0A,,                        mov             b, #10
+,,,
+006A,84,,                        div             ab
+,,,
+006B,11 74,,                        acall   LKDisp                                  ; Decodifca binario para o d
+006D,F9,,                        mov             r1, a                                   ; joga a dezena no r
+,,,
+006E,E5 F0,,                        mov             a, b
+0070,11 74,,                        acall   LKDisp                                  ; Decodifca binario para o d
+0072,FA,,                        mov             r2, a                                   ; joga a unidade no
+,,,
+0073,22,,                        ret
+,,,
+,,,; ----------------------------------------------------------
+,,,; LKDisp
+,,,; ----------------------------------------------------------
+,,,; Look-up table para decodificacao binario -> display
+,,,; ----------------------------------------------------------
+0074,,LKDisp,LKDisp:
+0074,90 00 79,,                        mov             dptr, #DECODING
+0077,93,,                        movc    a, @a+dptr
+,,,
+0078,22,,                        ret
+,,,
+0079,7E 30 6D 79,DECODING,DECODING:       db      not 81h, not 0cfh, not 92h, not 86h, not 0cch, not 0a4h, not 0a0h, not 8fh,
+,,,
+,,,; ----------------------------------------------------------
+,,,; Delay
+,,,; ----------------------------------------------------------
+,,,; Faz um delay de modo que a rotina de contagem de segundos
+,,,; Feche em aproximadamente 1 segundo
+,,,; ----------------------------------------------------------
+0083,,Delay,Delay:
+0083,22,,                        ret
+,,,
+,,,; ----------------------------------------------------------
+,,,; CKPulse
+,,,; ----------------------------------------------------------
+,,,; Pulso de clock no registardor de deslocamento
+,,,; ----------------------------------------------------------
+0084,,CKPulse,CKPulse:
+0084,D2 A2,,                        setb    SHCK
+0086,C2 A2,,                        clr             SHCK
+,,,
+0088,22,,                        ret
 ,,,
 ,,,; **********************************************************
 000E,,,                        end
