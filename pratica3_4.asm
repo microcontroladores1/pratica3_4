@@ -79,6 +79,18 @@ Exit:		ajmp	Main
 ; Contexto de contagem de pulsos
 ; ----------------------------------------------------------
 PulseCT:
+			setb	rs0					; Seleciona o registrador 1
+			clr		rs1
+
+			; Verifica se o b eh igual a 0
+			; Verifica se passou para 1
+			; Verifica se r0 = 99
+			acall	DcdCount
+			acall	Display
+			
+			clr		rs0					; Volta para o registrador 0
+			clr		rs1
+
 			ret
 
 ; ----------------------------------------------------------
@@ -87,8 +99,38 @@ PulseCT:
 ; Contexto de contagem de segundos
 ; ----------------------------------------------------------
 SecCT:		
+			acall	Display
+			; Fazer a verificacao se r0 = 59
+			acall	DcdCount
+			acall	Delay
+
 			ret
 
+; ----------------------------------------------------------
+; Display
+; ----------------------------------------------------------
+; Imprime os valores dos registradores r1 e r2 nos displays
+; ----------------------------------------------------------
+Display:
+			ret
+
+; ----------------------------------------------------------
+; DcdCount
+; ----------------------------------------------------------
+; Decodifica o valor do registrador r0 em BCD e joga os
+; decimal e a unidade nos registradores r1 e r2
+; ----------------------------------------------------------
+DcdCount:
+			ret
+
+; ----------------------------------------------------------
+; Delay
+; ----------------------------------------------------------
+; Faz um delay de modo que a rotina de contagem de segundos
+; Feche em aproximadamente 1 segundo
+; ----------------------------------------------------------
+Delay:
+			ret
 
 ; ********************************************************** 
 			end

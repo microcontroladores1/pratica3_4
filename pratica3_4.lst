@@ -95,7 +95,7 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
    65:	  0015	20 A4 05				jb		CONTSW, Sec
    66:	  0018	11 21		Pulse:		acall	PulseCT
    67:	  001A	02 00 1F				jmp		Exit
-   68:	  001D	11 22		Sec:		acall	SecCT
+   68:	  001D	11 2E		Sec:		acall	SecCT
    69:
    70:	  001F	01 15		Exit:		ajmp	Main
    71:
@@ -109,25 +109,70 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
    79:				; Contexto de contagem de pulsos
    80:				; ----------------------------------------------------------
    81:	  0021			PulseCT:
-   82:	  0021	22					ret
-   83:
-   84:				; ----------------------------------------------------------
-   85:				; SecCT
-   86:				; ----------------------------------------------------------
-   87:				; Contexto de contagem de segundos
-   88:				; ----------------------------------------------------------
-   89:	  0022			SecCT:
-   90:	  0022	22					ret
-   91:
-   92:
-   93:				; **********************************************************
-   94:							end
-   95:				; **********************************************************
-
+   82:	  0021	D2 D3					setb	rs0					; Seleciona o registrador 1
+   83:	  0023	C2 D4					clr		rs1
+   84:
+   85:							; Verifica se o b eh igual a 0
+   86:							; Verifica se passou para 1
+   87:							; Verifica se r0 = 99
+   88:	  0025	11 36					acall	DcdCount
+   89:	  0027	11 35					acall	Display
+   90:
+   91:	  0029	C2 D3					clr		rs0					; Volta para o regis
+				trador 0
+   92:	  002B	C2 D4					clr		rs1
+   93:
+   94:	  002D	22					ret
+   95:
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
 
 
+
+ Line  I  Addr  Code            Source
+
+   96:				; ----------------------------------------------------------
+   97:				; SecCT
+   98:				; ----------------------------------------------------------
+   99:				; Contexto de contagem de segundos
+  100:				; ----------------------------------------------------------
+  101:	  002E			SecCT:
+  102:	  002E	11 35					acall	Display
+  103:							; Fazer a verificacao se r0 = 59
+  104:	  0030	11 36					acall	DcdCount
+  105:	  0032	11 37					acall	Delay
+  106:
+  107:	  0034	22					ret
+  108:
+  109:				; ----------------------------------------------------------
+  110:				; Display
+  111:				; ----------------------------------------------------------
+  112:				; Imprime os valores dos registradores r1 e r2 nos displays
+  113:				; ----------------------------------------------------------
+  114:	  0035			Display:
+  115:	  0035	22					ret
+  116:
+  117:				; ----------------------------------------------------------
+  118:				; DcdCount
+  119:				; ----------------------------------------------------------
+  120:				; Decodifica o valor do registrador r0 em BCD e joga os
+  121:				; decimal e a unidade nos registradores r1 e r2
+  122:				; ----------------------------------------------------------
+  123:	  0036			DcdCount:
+  124:	  0036	22					ret
+  125:
+  126:				; ----------------------------------------------------------
+  127:				; Delay
+  128:				; ----------------------------------------------------------
+  129:				; Faz um delay de modo que a rotina de contagem de segundos
+  130:				; Feche em aproximadamente 1 segundo
+  131:				; ----------------------------------------------------------
+  132:	  0037			Delay:
+  133:	  0037	22					ret
+  134:
+  135:				; **********************************************************
+  136:							end
+  137:				; **********************************************************
 
 
 
@@ -160,6 +205,9 @@ B				  DATA	      F0
 BUTN				  NUMBER    00A0	  30
 CONTSW				  NUMBER    00A4	  36
 CY				  BIT	      D7
+DCDCOUNT			  CODE	    0036	 123
+DELAY				  CODE	    0037	 132
+DISPLAY				  CODE	    0035	 114
 DPH				  DATA	      83
 DPL				  DATA	      82
 EA				  BIT	      AF
@@ -199,9 +247,6 @@ PX1				  BIT	      BA
 RB8				  BIT	      9A
 RD				  BIT	      B7
 REN				  BIT	      9C
-RESET				  CODE	    0000
-RI				  BIT	      98
-RS0				  BIT	      D3
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 5
 
@@ -209,12 +254,15 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
 SYMBOL				  TYPE     VALUE	LINE
 ------------------------------------------------------------
+RESET				  CODE	    0000
+RI				  BIT	      98
+RS0				  BIT	      D3
 RS1				  BIT	      D4
 RXD				  BIT	      B0
 SBUF				  DATA	      99
 SCON				  DATA	      98
 SEC				  CODE	    001D	  68
-SECCT				  CODE	    0022	  89
+SECCT				  CODE	    002E	 101
 SHCK				  NUMBER    00A2	  33
 SHD				  NUMBER    00A1	  32
 SHLTCH				  NUMBER    00A3	  34
