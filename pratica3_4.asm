@@ -15,8 +15,12 @@
 ; Mapa de registradores
 ; ----------------------------------------------------------
 ; R0: Contagem binaria
-; R1: Parte decimal
+; R1: Dezenas
 ; R2: Unidade
+; R3: Contador na rotina SHSend 
+; R4: Contador na rotina Delay
+; R5: Contador na rotina Delay
+; R6: Contador na rotina Time
 ;
 ; Banco 0: Contador de segundos
 ; Banco 1: Contador de pulsos
