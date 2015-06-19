@@ -47,7 +47,7 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
    27:				; Equates
    28:				; **********************************************************
    29:
-   30:		B      00A0	BTN		equ		p2.0
+   30:		B      00A0	BTN			equ		p2.0
 
    31:
    32:		B      00A1	SHD			equ		p2.1				; Fluxo de dados no registra
@@ -72,7 +72,7 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
    43:				; Essa memoria extra so pode ser acessada por enderecamento indireto,
    44:				; por isso a pilha pode ser inicializada nessa regiao
    45:
-   46:	  0000	75 81 7F				mov			sp, #7fh					; In
+   46:	  0000	75 81 80				mov			sp, #80h					; In
 				icializa a pilha na regiao de memoria extra do 8052
    47:
    48:				; Inicializa os registradores r0, r1 e r2 dos bancos 0 e 1 com #0
@@ -90,40 +90,40 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
    60:				; **********************************************************
    61:				; Main
    62:				; **********************************************************
-   63:
-   64:	  0015	11 66					acall		DcdCount
-   65:	  0017	11 4F					acall		Display
-   66:	  0019			Main:
-   67:	  0019	20 A4 0C				jb		CONTSW, Sec
-   68:	  001C			Pulse:
-   69:	  001C	D2 D3					setb	rs0
-   70:	  001E	C2 D4					clr		rs1
-   71:
-   72:	  0020	11 66					acall	DcdCount
-   73:	  0022	11 4F					acall	Display
-   74:
-   75:	  0024	11 34					acall	PulseCT
-   76:	  0026	01 32					ajmp		Exit
-   77:	  0028			Sec:
-   78:	  0028	C2 D3					clr		rs0
-   79:	  002A	C2 D4					clr		rs1
+   63:	  0015	11 70					acall		DcdCount
+   64:	  0017	11 59					acall		Display
+   65:	  0019			Main:
+   66:	  0019	20 A4 0A				jb		CONTSW, Sec
+   67:	  001C			Pulse:
+   68:	  001C	D2 D3					setb	rs0
+   69:
+   70:	  001E	11 70					acall	DcdCount
+   71:	  0020	11 59					acall	Display
+   72:
+   73:	  0022	11 2C					acall	PulseCT
+   74:	  0024	01 2A					ajmp	Exit
+   75:	  0026			Sec:
+   76:	  0026	C2 D3					clr		rs0
+   77:	  0028	11 47					acall	SecCT
+   78:
+   79:	  002A	01 19		Exit:		ajmp	Main
    80:
-   81:	  002C	11 66					acall	DcdCount
-   82:	  002E	11 4F					acall	Display
-   83:
-   84:	  0030	11 47					acall	SecCT
-   85:
-   86:	  0032	01 19		Exit:		ajmp	Main
-   87:
-   88:				; **********************************************************
-   89:				; Sub-Rotinas
-   90:				; **********************************************************
-   91:
-   92:				; ----------------------------------------------------------
-   93:				; PulseCT
-   94:				; ----------------------------------------------------------
-   95:				; Contexto de contagem de pulsos
-   96:				; ----------------------------------------------------------
+   81:				; **********************************************************
+   82:				; Sub-Rotinas
+   83:				; **********************************************************
+   84:
+   85:				; ----------------------------------------------------------
+   86:				; PulseCT
+   87:				; ----------------------------------------------------------
+   88:				; Contexto de contagem de pulsos
+   89:				; ----------------------------------------------------------
+   90:	  002C			PulseCT:
+   91:	  002C	20 A4 17				jb		CONTSW, ExitP
+   92:	  002F	30 A0 FA				jnb		BTN, PulseCT		; Verifico se o botao foi apertado
+   93:	  0032			CheckSW:
+   94:	  0032	20 A4 11				jb		CONTSW, ExitP
+   95:	  0035	20 A0 FA				jb		BTN, CheckSW		; Verifico se o botao foi liberado p
+				ara contar um pulso
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
 
@@ -131,62 +131,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-   97:	  0034			PulseCT:
-   98:	  0034	30 A0 FD				jnb		BTN, $				; Verifico se o botao foi ap
-				ertado
-   99:	  0037	20 A0 FD				jb		BTN, $				; Verifico se o botao foi li
-				berado para contar um pulso
-  100:
-  101:	  003A	E5 9D					mov		a, not 98			; Limite da contagem de puls
-				os
-  102:	  003C	28					add		a, r0				; se r0 conter um numero > 9
-				8, a carry vai ser setada
-  103:
-  104:	  003D	50 02					jnc		Inrement			; Se !(r>98), incremente. El
+   96:
+   97:	  0038	E8					mov		a, r0       		; Limite da contagem de pulsos
+   98:	  0039	24 9D					add		a, #(not 98)		; se r0 conter um numero > 99, a car
+				ry vai ser setada
+   99:
+  100:	  003B	50 04					jnc		Inrement			; Se !(r>98), incremente. El
 				se, pule
-  105:	  003F	01 42					ajmp	Decode
-  106:	  0041	08		Inrement:	inc		r0
-  107:	  0042			Decode:
-  108:	  0042	11 66					acall	DcdCount
-  109:	  0044	11 4F					acall	Display
-  110:
-  111:
-  112:	  0046	22					ret
-  113:
+  101:	  003D	78 00					mov		r0, #0
+  102:	  003F	01 42					ajmp	Decode
+  103:	  0041	08		Inrement:	inc		r0
+  104:	  0042			Decode:
+  105:	  0042	11 70					acall	DcdCount
+  106:	  0044	11 59					acall	Display
+  107:	  0046			ExitP:
+  108:	  0046	22					ret
+  109:
+  110:				; ----------------------------------------------------------
+  111:				; SecCT
+  112:				; ----------------------------------------------------------
+  113:				; Contexto de contagem de segundos
   114:				; ----------------------------------------------------------
-  115:				; SecCT
-  116:				; ----------------------------------------------------------
-  117:				; Contexto de contagem de segundos
-  118:				; ----------------------------------------------------------
-  119:	  0047			SecCT:
-  120:	  0047	11 66					acall	DcdCount
-  121:	  0049	11 4F					acall	Display
-  122:							; Fazer a verificacao se r0 = 59
-  123:	  004B	11 83					acall	Delay
-  124:	  004D	08					inc		r0
-  125:
-  126:	  004E	22					ret
-  127:
-  128:				; ----------------------------------------------------------
-  129:				; Display
-  130:				; ----------------------------------------------------------
-  131:				; Imprime os valores dos registradores r1 e r2 nos displays
-  132:				; Basicamente, envio bit a bit do acumulador pelo SHD. A cada
-  133:				; envio dou um pulso de clock.
-  134:				; ----------------------------------------------------------
-  135:	  004F			Display:
-  136:	  004F	C2 A3					clr		SHLTCH					; Desabilito a saida
+  115:	  0047			SecCT:
+  116:	  0047	11 70					acall	DcdCount
+  117:	  0049	11 59					acall	Display
+  118:
+  119:	  004B	E8					mov		a, r0
+  120:	  004C	24 C5					add		a, #(not 58)
+  121:
+  122:	  004E	40 04					jc		Zero
+  123:	  0050	08					inc		r0
+  124:	  0051	02 00 56				jmp		Ext
+  125:	  0054	78 00		Zero:		mov		r0, #0
+  126:
+  127:	  0056	11 96		Ext:		acall	Time
+  128:
+  129:	  0058	22					ret
+  130:
+  131:				; ----------------------------------------------------------
+  132:				; Display
+  133:				; ----------------------------------------------------------
+  134:				; Imprime os valores dos registradores r1 e r2 nos displays
+  135:				; Basicamente, envio bit a bit do acumulador pelo SHD. A cada
+  136:				; envio dou um pulso de clock.
+  137:				; ----------------------------------------------------------
+  138:	  0059			Display:
+  139:	  0059	C2 A3					clr		SHLTCH					; Desabilito a saida
 				 do shift
-  137:
-  138:	  0051	EA					mov		a, r2					; Envio primeiro a u
-				nidade
-  139:	  0052	11 5A					acall	SHSend
   140:
-  141:	  0054	E9					mov		a, r1					; Envio depois a dez
-				ena
-  142:	  0055	11 5A					acall	SHSend
+  141:	  005B	EA					mov		a, r2					; Envio primeiro a u
+				nidade
+  142:	  005C	11 64					acall	SHSend
   143:
-  144:	  0057	D2 A3					setb	SHLTCH					; travo a saida do shift
+  144:	  005E	E9					mov		a, r1					; Envio depois a dez
+				ena
+  145:	  005F	11 64					acall	SHSend
+  146:
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
 
@@ -194,62 +194,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  145:
-  146:	  0059	22					ret
-  147:
-  148:				; ----------------------------------------------------------
-  149:				; SHSend
-  150:				; ----------------------------------------------------------
-  151:				; Envio serial do acumulador para shift register
-  152:				; ----------------------------------------------------------
-  153:	  005A			SHSend:
-  154:	  005A	7B 08					mov		r3, #8					; Contador
-  155:	  005C	A2 E7		Again:		mov		c, acc.7
-  156:	  005E	92 A1					mov		SHD, c					; envia a carry para
+  147:	  0061	D2 A3					setb	SHLTCH					; travo a saida do shift
+  148:
+  149:	  0063	22					ret
+  150:
+  151:				; ----------------------------------------------------------
+  152:				; SHSend
+  153:				; ----------------------------------------------------------
+  154:				; Envio serial do acumulador para shift register
+  155:				; ----------------------------------------------------------
+  156:	  0064			SHSend:
+  157:	  0064	7B 08					mov		r3, #8					; Contador
+  158:	  0066	A2 E7		Again:		mov		c, acc.7
+  159:	  0068	92 A1					mov		SHD, c					; envia a carry para
 				 o shift
-  157:
-  158:	  0060	11 90					acall	CKPulse					; Pulso de clock
-  159:
-  160:	  0062	23					rl		a
-  161:	  0063	DB F7					djnz	r3, Again
+  160:
+  161:	  006A	11 9D					acall	CKPulse					; Pulso de clock
   162:
-  163:	  0065	22					ret
-  164:
-  165:				; ----------------------------------------------------------
-  166:				; DcdCount
-  167:				; ----------------------------------------------------------
-  168:				; Decodifica o valor do registrador r0 em BCD e joga os
-  169:				; decimal e a unidade nos registradores r1 e r2
+  163:	  006C	23					rl		a
+  164:	  006D	DB F7					djnz	r3, Again
+  165:
+  166:	  006F	22					ret
+  167:
+  168:				; ----------------------------------------------------------
+  169:				; DcdCount
   170:				; ----------------------------------------------------------
-  171:	  0066			DcdCount:
-  172:	  0066	E8					mov		a, r0
-  173:	  0067	75 F0 0A				mov		b, #10
-  174:
-  175:	  006A	84					div		ab
-  176:
-  177:	  006B	11 74					acall	LKDisp					; Decodifca binario para o d
-				isplay e bota no acumulador
-  178:	  006D	F9					mov		r1, a					; joga a dezena no r
-				1
+  171:				; Decodifica o valor do registrador r0 em BCD e joga os
+  172:				; decimal e a unidade nos registradores r1 e r2
+  173:				; ----------------------------------------------------------
+  174:	  0070			DcdCount:
+  175:	  0070	E8					mov		a, r0
+  176:	  0071	75 F0 0A				mov		b, #10
+  177:
+  178:	  0074	84					div		ab
   179:
-  180:	  006E	E5 F0					mov		a, b
-  181:	  0070	11 74					acall	LKDisp					; Decodifca binario para o d
+  180:	  0075	11 7E					acall	LKDisp					; Decodifca binario para o d
 				isplay e bota no acumulador
-  182:	  0072	FA					mov		r2, a					; joga a unidade no
+  181:	  0077	F9					mov		r1, a					; joga a dezena no r
+				1
+  182:
+  183:	  0078	E5 F0					mov		a, b
+  184:	  007A	11 7E					acall	LKDisp					; Decodifca binario para o d
+				isplay e bota no acumulador
+  185:	  007C	FA					mov		r2, a					; joga a unidade no
 				r2
-  183:
-  184:	  0073	22					ret
-  185:
-  186:				; ----------------------------------------------------------
-  187:				; LKDisp
-  188:				; ----------------------------------------------------------
-  189:				; Look-up table para decodificacao binario -> display
-  190:				; ----------------------------------------------------------
-  191:	  0074			LKDisp:
-  192:	  0074	90 00 79				mov		dptr, #DECODING
-  193:	  0077	93					movc	a, @a+dptr
-  194:
-  195:	  0078	22					ret
+  186:
+  187:	  007D	22					ret
+  188:
+  189:				; ----------------------------------------------------------
+  190:				; LKDisp
+  191:				; ----------------------------------------------------------
+  192:				; Look-up table para decodificacao binario -> display
+  193:				; ----------------------------------------------------------
+  194:	  007E			LKDisp:
+  195:	  007E	90 00 83				mov		dptr, #DECODING
+  196:	  0081	93					movc	a, @a+dptr
+  197:
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 5
 
@@ -257,40 +257,52 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  196:
-  197:	  0079	7E 30 6D 79	DECODING:	db	not 81h, not 0cfh, not 92h, not 86h, not 0cch, not 0a4h, not 0a0h, not 8fh,
-	  007D	33 5B 5F 70	not 80h, not 8ch
-	  0081	7F 73
-  198:
-  199:				; ----------------------------------------------------------
-  200:				; Delay
-  201:				; ----------------------------------------------------------
-  202:				; Faz um delay de modo que a rotina de contagem de segundos
-  203:				; Feche em aproximadamente 1 segundo
+  198:	  0082	22					ret
+  199:
+  200:	  0083	7E 30 6D 79	DECODING:	db	not 81h, not 0cfh, not 92h, not 86h, not 0cch, not 0a4h, not 0a0h, not 8fh,
+	  0087	33 5B 5F 70	not 80h, not 8ch
+	  008B	7F 73
+  201:
+  202:				; ----------------------------------------------------------
+  203:				; Delay
   204:				; ----------------------------------------------------------
-  205:	  0083			Delay:
-  206:	  0083	7C FF					mov		r4, #255
-  207:	  0085	7E FF					mov		r6, #255
-  208:	  0087	7D FF		Here:		mov		r5, #255
-  209:	  0089	DD FE					djnz	r5, $
-  210:	  008B	DE FE					djnz	r6, $
-  211:	  008D	DC F8					djnz	r4, Here
-  212:	  008F	22					ret
+  205:				; Faz um delay de modo que a rotina de contagem de segundos
+  206:				; Feche em aproximadamente 1 segundo
+  207:				; ----------------------------------------------------------
+  208:	  008D			Delay:
+  209:	  008D	7C C8					mov		r4, #200
+  210:	  008F	7D F9		Here:		mov		r5, #249
+  211:	  0091	DD FE					djnz	r5, $
+  212:	  0093	DC FA					djnz	r4, Here
   213:
-  214:				; ----------------------------------------------------------
-  215:				; CKPulse
+  214:	  0095	22					ret
+  215:
   216:				; ----------------------------------------------------------
-  217:				; Pulso de clock no registardor de deslocamento
+  217:				; Time
   218:				; ----------------------------------------------------------
-  219:	  0090			CKPulse:
-  220:	  0090	D2 A2					setb	SHCK
-  221:	  0092	C2 A2					clr		SHCK
-  222:
-  223:	  0094	22					ret
-  224:
-  225:				; **********************************************************
-  226:							end
-  227:				; **********************************************************
+  219:				; Chama um tempo de um segundo
+  220:				; ----------------------------------------------------------
+  221:	  0096			Time:
+  222:	  0096	7E 0A					mov		r6, #10
+  223:	  0098	11 8D		While:		acall	Delay
+  224:	  009A	DE FC					djnz	r6, While
+  225:
+  226:	  009C	22					ret
+  227:
+  228:				; ----------------------------------------------------------
+  229:				; CKPulse
+  230:				; ----------------------------------------------------------
+  231:				; Pulso de clock no registardor de deslocamento
+  232:				; ----------------------------------------------------------
+  233:	  009D			CKPulse:
+  234:	  009D	D2 A2					setb	SHCK
+  235:	  009F	C2 A2					clr		SHCK
+  236:
+  237:	  00A1	22					ret
+  238:
+  239:				; **********************************************************
+  240:							end
+  241:				; **********************************************************
 
 
 
@@ -301,9 +313,14 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
                      no errors
 
 
-
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 6
+
+
+
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 7
 
 
 
@@ -319,17 +336,18 @@ SYMBOL				  TYPE     VALUE	LINE
 ??VERSION			  NUMBER    0130
 AC				  BIT	      D6
 ACC				  DATA	      E0
-AGAIN				  CODE	    005C	 155
+AGAIN				  CODE	    0066	 158
 B				  DATA	      F0
 BTN				  NUMBER    00A0	  30
-CKPULSE				  CODE	    0090	 219
+CHECKSW				  CODE	    0032	  93
+CKPULSE				  CODE	    009D	 233
 CONTSW				  NUMBER    00A4	  36
 CY				  BIT	      D7
-DCDCOUNT			  CODE	    0066	 171
-DECODE				  CODE	    0042	 107
-DECODING			  CODE	    0079	 197
-DELAY				  CODE	    0083	 205
-DISPLAY				  CODE	    004F	 135
+DCDCOUNT			  CODE	    0070	 174
+DECODE				  CODE	    0042	 104
+DECODING			  CODE	    0083	 200
+DELAY				  CODE	    008D	 208
+DISPLAY				  CODE	    0059	 138
 DPH				  DATA	      83
 DPL				  DATA	      82
 EA				  BIT	      AF
@@ -338,22 +356,24 @@ ET0				  BIT	      A9
 ET1				  BIT	      AB
 EX0				  BIT	      A8
 EX1				  BIT	      AA
-EXIT				  CODE	    0032	  86
+EXIT				  CODE	    002A	  79
+EXITP				  CODE	    0046	 107
+EXT				  CODE	    0056	 127
 EXTI0				  CODE	    0003
 EXTI1				  CODE	    0013
 F0				  BIT	      D5
-HERE				  CODE	    0087	 208
+HERE				  CODE	    008F	 210
 IE				  DATA	      A8
 IE0				  BIT	      89
 IE1				  BIT	      8B
-INREMENT			  CODE	    0041	 106
+INREMENT			  CODE	    0041	 103
 INT0				  BIT	      B2
 INT1				  BIT	      B3
 IP				  DATA	      B8
 IT0				  BIT	      88
 IT1				  BIT	      8A
-LKDISP				  CODE	    0074	 191
-MAIN				  CODE	    0019	  66
+LKDISP				  CODE	    007E	 194
+MAIN				  CODE	    0019	  65
 OV				  BIT	      D2
 P				  BIT	      D0
 P0				  DATA	      80
@@ -362,18 +382,18 @@ P2				  DATA	      A0
 P3				  DATA	      B0
 PCON				  DATA	      87
 PS				  BIT	      BC
-PSW				  DATA	      D0
-PT0				  BIT	      B9
-PT1				  BIT	      BB
 
-ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 7
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 8
 
 
 
 SYMBOL				  TYPE     VALUE	LINE
 ------------------------------------------------------------
-PULSE				  CODE	    001C	  68
-PULSECT				  CODE	    0034	  97
+PSW				  DATA	      D0
+PT0				  BIT	      B9
+PT1				  BIT	      BB
+PULSE				  CODE	    001C	  67
+PULSECT				  CODE	    002C	  90
 PX0				  BIT	      B8
 PX1				  BIT	      BA
 RB8				  BIT	      9A
@@ -386,12 +406,12 @@ RS1				  BIT	      D4
 RXD				  BIT	      B0
 SBUF				  DATA	      99
 SCON				  DATA	      98
-SEC				  CODE	    0028	  77
-SECCT				  CODE	    0047	 119
+SEC				  CODE	    0026	  75
+SECCT				  CODE	    0047	 115
 SHCK				  NUMBER    00A2	  33
 SHD				  NUMBER    00A1	  32
 SHLTCH				  NUMBER    00A3	  34
-SHSEND				  CODE	    005A	 153
+SHSEND				  CODE	    0064	 156
 SINT				  CODE	    0023
 SM0				  BIT	      9F
 SM1				  BIT	      9E
@@ -406,6 +426,7 @@ TF1				  BIT	      8F
 TH0				  DATA	      8C
 TH1				  DATA	      8D
 TI				  BIT	      99
+TIME				  CODE	    0096	 221
 TIMER0				  CODE	    000B
 TIMER1				  CODE	    001B
 TL0				  DATA	      8A
@@ -414,4 +435,6 @@ TMOD				  DATA	      89
 TR0				  BIT	      8C
 TR1				  BIT	      8E
 TXD				  BIT	      B1
+WHILE				  CODE	    0098	 223
 WR				  BIT	      B6
+ZERO				  CODE	    0054	 125

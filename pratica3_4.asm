@@ -27,7 +27,7 @@
 ; Equates
 ; **********************************************************
 
-BTN		equ		p2.0												
+BTN			equ		p2.0												
 
 SHD			equ		p2.1				; Fluxo de dados no registrador	
 SHCK		equ		p2.2				; Clock do registrador
@@ -43,7 +43,7 @@ CONTSW		equ		p2.4				; Chave seletora de contexto
 ; Essa memoria extra so pode ser acessada por enderecamento indireto,
 ; por isso a pilha pode ser inicializada nessa regiao
 
-			mov			sp, #7fh					; Inicializa a pilha na regiao de memoria extra do 8052
+			mov			sp, #80h					; Inicializa a pilha na regiao de memoria extra do 8052
 
 ; Inicializa os registradores r0, r1 e r2 dos bancos 0 e 1 com #0
 
@@ -60,27 +60,20 @@ CONTSW		equ		p2.4				; Chave seletora de contexto
 ; ********************************************************** 
 ; Main
 ; ********************************************************** 
-
 			acall		DcdCount
 			acall		Display
 Main:
 			jb		CONTSW, Sec		
 Pulse:		
 			setb	rs0
-			clr		rs1
 
 			acall	DcdCount
 			acall	Display
 
 			acall	PulseCT
-			ajmp		Exit
+			ajmp	Exit
 Sec:		
 			clr		rs0
-			clr		rs1
-
-			acall	DcdCount
-			acall	Display
-
 			acall	SecCT
 
 Exit:		ajmp	Main
@@ -95,20 +88,23 @@ Exit:		ajmp	Main
 ; Contexto de contagem de pulsos
 ; ----------------------------------------------------------
 PulseCT:
-			jnb		BTN, $				; Verifico se o botao foi apertado
-			jb		BTN, $				; Verifico se o botao foi liberado para contar um pulso
+			jb		CONTSW, ExitP
+			jnb		BTN, PulseCT		; Verifico se o botao foi apertado
+CheckSW:
+			jb		CONTSW, ExitP
+			jb		BTN, CheckSW		; Verifico se o botao foi liberado para contar um pulso
 
-			mov		a, not 98			; Limite da contagem de pulsos
-			add		a, r0				; se r0 conter um numero > 98, a carry vai ser setada
+			mov		a, r0       		; Limite da contagem de pulsos
+			add		a, #(not 98)		; se r0 conter um numero > 99, a carry vai ser setada
 
 			jnc		Inrement			; Se !(r>98), incremente. Else, pule
+			mov		r0, #0
 			ajmp	Decode
 Inrement:	inc		r0
 Decode:		
 			acall	DcdCount 
 			acall	Display
-			
-
+ExitP:
 			ret
 
 ; ----------------------------------------------------------
@@ -119,9 +115,16 @@ Decode:
 SecCT:		
 			acall	DcdCount
 			acall	Display
-			; Fazer a verificacao se r0 = 59
-			acall	Delay
+
+			mov		a, r0 
+			add		a, #(not 58)
+
+			jc		Zero
 			inc		r0
+			jmp		Ext
+Zero:		mov		r0, #0
+
+Ext:		acall	Time
 
 			ret
 
@@ -203,12 +206,23 @@ DECODING:	db	not 81h, not 0cfh, not 92h, not 86h, not 0cch, not 0a4h, not 0a0h, 
 ; Feche em aproximadamente 1 segundo
 ; ----------------------------------------------------------
 Delay:
-			mov		r4, #255
-			mov		r6, #255
-Here:		mov		r5, #255
+			mov		r4, #200
+Here:		mov		r5, #249
 			djnz	r5, $
-			djnz	r6, $
 			djnz	r4, Here
+
+			ret
+
+; ----------------------------------------------------------
+; Time
+; ----------------------------------------------------------
+; Chama um tempo de um segundo
+; ----------------------------------------------------------
+Time:
+			mov		r6, #10
+While:		acall	Delay
+			djnz	r6, While
+
 			ret
 
 ; ----------------------------------------------------------
